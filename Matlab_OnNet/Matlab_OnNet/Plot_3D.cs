@@ -13,31 +13,76 @@ using MathWorks.MATLAB.NET.Utility;
 using MLApp;
 
 
+
 namespace Matlab_OnNet
 {
     class Plot_ThreeDim
     {
-        string FILE_NAME = "_";
+        string FILE_PATH = "_";
         string SheetName = "_";
         string PlotBlock = "_";
         int iframe = 0;
         private const double Pi = 3.1416;
-        private string exlspec = string.Empty;
         public static int Figure_acc = 1;
         public static int Sub_figure_num = 2;
-
         public static int FrameSplitup = 0;
 
         MLAppClass matlab;
+        OleDbConnection con;
+        DataTable dtt;
+        OleDbDataAdapter odp;
+        DataSet ds;
 
-        public Plot_ThreeDim(string file, string page, string block, int fram)
+        public Plot_ThreeDim()
         {
-            FILE_NAME = file;
+        }
+        public Plot_ThreeDim(string file_path, string page, string block, int fram)
+        {
+            FILE_PATH = file_path;
             SheetName = page;
             PlotBlock = block;
             iframe = fram;
             matlab = new MLAppClass();
         }
+        public void OpenExcel(string path)
+        {
+            try
+            {
+                string exlspec = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + FILE_PATH + ";Extended Properties='Excel 12.0;HDR=NO;IMEX=1;'";
+                con = new OleDbConnection(exlspec);
+                con.Open();
+                dtt = new DataTable();
+                dtt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
+                String[] exsh_name = new String[dtt.Rows.Count];
+
+                int i = 0;
+                do
+                {
+                    exsh_name[i] = dtt.Rows[i]["TABLE_NAME"].ToString();
+                    i++;
+                } while (i < dtt.Rows.Count);
+            }
+            catch (Exception mes)
+            {
+                mes = new EvaluateException("" + DateTime.Now + " 3D Error : Can't find the file or can not open file...." + '\t' + "");
+                ErrorLogger(mes.Message);
+            }
+        }
+        public void SelectPage(string page_name)
+        {
+            try
+            {
+                odp = new OleDbDataAdapter(string.Format("SELECT * FROM [{0}]", page_name), con);
+                ds = new DataSet();
+                odp.Fill(ds, page_name);
+            }
+            catch (Exception mes)
+            {
+                mes = new Exception_Handle("" + DateTime.Now + " 3D Error : an error occurs when changed a page or specified a page..." + '\t' + "");
+                ErrorLogger(mes.Message);
+            }
+        }
+
         public void Run()
         {
             List<string> PolarBlockElements = new List<string>();
@@ -50,30 +95,24 @@ namespace Matlab_OnNet
             int column_count = 0;
             string command = "_";
 
-            string exlspec = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + FILE_NAME + ";Extended Properties='Excel 12.0;HDR=NO;IMEX=1;'";
-            OleDbConnection con = new OleDbConnection(exlspec);
-            con.Open();
-            DataTable dss = new DataTable();
-            dss = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-            OleDbDataAdapter odp = new OleDbDataAdapter(string.Format("SELECT * FROM [{0}]", SheetName), con);
-            DataSet dt = new DataSet();
-            odp.Fill(dt, SheetName);
+            OpenExcel(FILE_PATH);
+            SelectPage(SheetName);
 
-            for (int i = 0; i < dt.Tables[0].Rows.Count; i++)
+            for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
             {
-                if (dt.Tables[0].Rows[i][0].ToString() == PlotBlock)
+                if (ds.Tables[0].Rows[i][0].ToString() == PlotBlock)
                     Jump_2_PlotRow = i; //To get the row position of this string keyin by user.
-                if (dt.Tables[0].Rows[i][0].ToString() == "Horizontal Polarization")
+                if (ds.Tables[0].Rows[i][0].ToString() == "Horizontal Polarization")
                     Jump2Horizontal = i;
-                if (dt.Tables[0].Rows[i][0].ToString() == "Vertical Polarization")
+                if (ds.Tables[0].Rows[i][0].ToString() == "Vertical Polarization")
                     Jump2Vertical = i;
             }
 
-            for (int i = Jump_2_PlotRow; i < dt.Tables[0].Rows.Count; i++) //Jump to specified polarization block to read data                
+            for (int i = Jump_2_PlotRow; i < ds.Tables[0].Rows.Count; i++) //Jump to specified polarization block to read data                
             {
-                for (int j = 0; j < dt.Tables[0].Columns.Count; j++)
+                for (int j = 0; j < ds.Tables[0].Columns.Count; j++)
                 {
-                    if (dt.Tables[0].Rows[i][j].ToString() == "")
+                    if (ds.Tables[0].Rows[i][j].ToString() == "")
                     {
                         if (PolarBlockElements.Contains("Theta") && temp == 0)
                         {
@@ -83,13 +122,13 @@ namespace Matlab_OnNet
 
                         continue;
                     }
-                    if (column_count > 0 && j > 1 && dt.Tables[0].Rows[i][j].ToString() != "Phi")
-                        PolarBlockElements.Add(dt.Tables[0].Rows[i][0].ToString());//fill Row's data into this List container                        
-                    PolarBlockElements.Add(dt.Tables[0].Rows[i][j].ToString());//fill test value into List container                    
+                    if (column_count > 0 && j > 1 && ds.Tables[0].Rows[i][j].ToString() != "Phi")
+                        PolarBlockElements.Add(ds.Tables[0].Rows[i][0].ToString());//fill Row's data into this List container                        
+                    PolarBlockElements.Add(ds.Tables[0].Rows[i][j].ToString());//fill test value into List container                    
                 }
 
                 //remove these string and search end terminal in the block                
-                if (dt.Tables[0].Rows[i][0].ToString() == "" &&
+                if (ds.Tables[0].Rows[i][0].ToString() == "" &&
                     PolarBlockElements.Contains(PlotBlock) &&
                     PolarBlockElements.Contains("Phi") &&
                     PolarBlockElements.Contains("Theta"))
@@ -152,7 +191,6 @@ namespace Matlab_OnNet
             int ColumnInMatlab = 0;
             int RowInMatlab = 1;
 
-
             for (int i = 0; i < (DataList_2_CoordinateTransformation.Length - 3); i = i + 3)
             {
 
@@ -166,8 +204,7 @@ namespace Matlab_OnNet
                 y[index] = r * System.Math.Sin(phi) * System.Math.Sin(theta);
                 z[index] = r * System.Math.Cos(theta);
 
-                //Change sequence from one dimensional(@.NET) to two dimensional(@Matlab) 
-                if (index < column_count)
+                if (index < column_count) //Change sequence from one dimensional(@.NET) to two dimensional(@Matlab) 
                     ColumnInMatlab = index + 1;
                 else
                 {
@@ -182,8 +219,6 @@ namespace Matlab_OnNet
                 matlab.Execute(command);
                 command = "z(" + RowInMatlab + ", " + ColumnInMatlab + ")=deal(" + z[index] + ");";
                 matlab.Execute(command);
-
-
             }// end for loop
 
             //kill array elements
@@ -192,25 +227,43 @@ namespace Matlab_OnNet
             Array.Clear(z, 0, z.Length);
             Array.Clear(DataList_2_CoordinateTransformation, 0, DataList_2_CoordinateTransformation.Length);
 
+            Stru_GetExcelInfor getinfor;
+            ChangeSheet(out getinfor);
+
             if (FrameSplitup == 0) FrameSplitup = Convert.ToInt32(Math.Ceiling(Math.Sqrt(iframe)));
-            Console.WriteLine("Frame: " + FrameSplitup + " ifram: " + iframe + "");
+            //Console.WriteLine("Frame: " +FrameSplitup+ " ifram: " +iframe+"");
 
             matlab.Execute("figure('Menubar', 'none');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 3][0].ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 3][1].ToString() + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 2][0].ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 2][1].ToString() + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 1][0].ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 1][1].ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', '" + getinfor.first_infor.name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + getinfor.first_infor.value.ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', '" + getinfor.second_infor.name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + getinfor.second_infor.value.ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + getinfor.third_infor.name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + getinfor.third_infor.value.ToString() + "dBm');");
             matlab.Execute("h   =mesh(x,y,z); xlabel('X-axis');ylabel('Y-axis');zlabel('Z-axis');");
             matlab.Execute("set(h,'edgecolor', [0.2 0.5 0.5], 'FaceColor',[0.99609375 0.99609375 0.55859375]);");
             matlab.Execute("rotate3d on");
-
             matlab.Execute("title('SheetName: " + SheetName + "    Block: " + PlotBlock + "')");
             matlab.Execute("axis normal;");
 
-            if (Figure_acc == Sub_figure_num) Figure_acc++;
+            /*
+                        // scan second page
+                        SheetName = "Eddie$";
+                        SelectPage(SheetName);
 
+                        List<string> s_second_page_rowdata = new List<string>();
+
+                        for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                            for (int j = 0; j < ds.Tables[0].Columns.Count; j++)
+                                s_second_page_rowdata.Add( ds.Tables[0].Rows[i][j].ToString());
+
+                        for (int i = 0; i < s_second_page_rowdata.Count; i++) 
+                        {
+                            Console.WriteLine(s_second_page_rowdata[i]);
+                        }
+            */
+
+            if (Figure_acc == Sub_figure_num) Figure_acc++;
             matlab.Execute("figure(" + Sub_figure_num + ")");
             matlab.Execute("hold on");
 
@@ -228,5 +281,58 @@ namespace Matlab_OnNet
             // if (Figure_acc == Sub_figure_num) Figure_acc++;
 
         }//end Run
+
+        public struct Infor_Type
+        {
+            public string name;
+            public string value;
+        };
+
+        public struct Stru_GetExcelInfor
+        {
+            public Infor_Type first_infor;
+            public Infor_Type second_infor;
+            public Infor_Type third_infor;
+        };
+
+        public void GetInformation(DataSet ds, out Stru_GetExcelInfor stru)
+        {
+            stru.first_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 3][0].ToString();
+            stru.first_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 3][1].ToString();
+            stru.second_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 2][0].ToString();
+            stru.second_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 2][1].ToString();
+            stru.third_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][0].ToString();
+            stru.third_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][1].ToString();
+        }
+        public void ChangeSheet(out Stru_GetExcelInfor ss)//if user must change sheet page to read information about chamber's report
+        {
+            SheetName = "Eddie$";//the specified sheet name
+            SelectPage(SheetName);
+            GetInformation(ds, out ss);//get the information of test item from excel            
+        }
+        public void ErrorLogger(string exceptionmessage)
+        {
+            const string Err_Log_Path = ".\\..\\..\\errlog.txt";//place error log in root folder
+
+            using (StreamWriter writer = new StreamWriter(Err_Log_Path, true))
+            {
+                writer.WriteLine(exceptionmessage.ToString());
+            }
+        }
+        public class Exception_Handle : System.Exception
+        {
+            public Exception_Handle()
+            {
+            }
+            public Exception_Handle(string message)
+                : base(message)
+            {
+            }
+            public Exception_Handle(string message, Exception innerException)
+                : base(message, innerException)
+            {
+            }
+        }
+
     }
 }

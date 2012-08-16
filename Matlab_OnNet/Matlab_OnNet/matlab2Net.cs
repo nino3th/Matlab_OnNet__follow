@@ -27,6 +27,8 @@
  * ----------------------------------------------------------------------------------------------------
  * 20120717  | NinoLiu  | 1.7.0  | Add to scan excel bottom's information and then show on the main-UI,
  *                               | and add the method of killing lists and arrays.
+* ----------------------------------------------------------------------------------------------------
+ * 20120720  | NinoLiu  | 1.8.0  | Add error log fill function to record error event.
  * ======================================================================================================
  */
 using System;
