@@ -33,6 +33,8 @@
  * 20120731  | NinoLiu  | 1.9.0  | Add encrypt algorithm(dll) to encrypt/decrypt for TRP/TIP and the other information.
  *                               | Add sheetname index access function to correspond sheet to Global page information.
  * ----------------------------------------------------------------------------------------------------
+ * 20120815  | NinoLiu  | 1.10.0 | Add Quick_Sort function for sheet page. 
+ * ----------------------------------------------------------------------------------------------------
  * ======================================================================================================
  */
 using System;

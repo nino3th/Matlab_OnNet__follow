@@ -62,6 +62,7 @@ namespace Matlab_OnNet
                     SheetNameList[i] = dtt.Rows[i]["TABLE_NAME"].ToString();
                     i++;
                 } while (i < dtt.Rows.Count);
+                Quick_Sort(SheetNameList);
             }
             catch (Exception mes)
             {
@@ -362,6 +363,37 @@ namespace Matlab_OnNet
             public Exception_Handle(string message, Exception innerException)
                 : base(message, innerException)
             {
+            }
+        }
+        public void Quick_Sort(String[] str)
+        {
+            string temp = "_";
+            int sheet_length = str.Length;
+            /*            List<int > sheet_list = new List<int>();
+                        for(int i = 0;i <= sheet_length-1; i++)
+                        {
+                            if (str[i] == "Global$")
+                                break;
+                            temp = str[i].Substring(7,2);
+                            if (temp.Contains("$"))
+                                temp = temp.Substring(0, 1);
+                            sheet_list.Add(Convert.ToInt32(temp));
+
+                        } 
+            */
+            for (int j = sheet_length - 3; j < sheet_length - 1; j++)
+            {
+                for (int i = 1; i <= sheet_length - 1; i++)
+                {
+                    if (str[i - 1].Length > str[i].Length)
+                    {
+                        if (str[i - 1] == "Global$" || str[i] == "Global$")
+                            continue;
+                        temp = str[i - 1];
+                        str[i - 1] = str[i];
+                        str[i] = temp;
+                    }
+                }
             }
         }
     }
