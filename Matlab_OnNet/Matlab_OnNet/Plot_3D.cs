@@ -41,13 +41,14 @@ namespace Matlab_OnNet
         public void Run()
         {
             List<string> PolarBlockElements = new List<string>();
+            List<string> TestInformation = new List<string>();
 
             int Jump_2_PlotRow = 0;
+            int Jump2Horizontal = 0;
+            int Jump2Vertical = 0;
+            int temp = 0;
+            int column_count = 0;
             string command = "_";
-            string test_mode_data_infor = "_";
-            string test_item = "_";
-            string vertical_cable_loss = "_";
-            string horizontal_cable_loss = "_";
 
             string exlspec = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + FILE_NAME + ";Extended Properties='Excel 12.0;HDR=NO;IMEX=1;'";
             OleDbConnection con = new OleDbConnection(exlspec);
@@ -60,23 +61,15 @@ namespace Matlab_OnNet
 
             for (int i = 0; i < dt.Tables[0].Rows.Count; i++)
             {
-                //Console.WriteLine(dt.Tables[0].Rows[i][0].ToString().Trim());
                 if (dt.Tables[0].Rows[i][0].ToString() == PlotBlock)
                     Jump_2_PlotRow = i; //To get the row position of this string keyin by user.
-                if (dt.Tables[0].Rows[i][0].ToString() == "TRP" || dt.Tables[0].Rows[i][0].ToString() == "TIS")
-                {
-                    test_mode_data_infor = dt.Tables[0].Rows[i][1].ToString();
-                    test_item = dt.Tables[0].Rows[i][0].ToString();
-                }
-                if (dt.Tables[0].Rows[i][0].ToString() == "Vertical cable loss")
-                    vertical_cable_loss = dt.Tables[0].Rows[i][1].ToString();
-                if (dt.Tables[0].Rows[i][0].ToString() == "Horiziontal cable loss")
-                    horizontal_cable_loss = dt.Tables[0].Rows[i][1].ToString();
+                if (dt.Tables[0].Rows[i][0].ToString() == "Horizontal Polarization")
+                    Jump2Horizontal = i;
+                if (dt.Tables[0].Rows[i][0].ToString() == "Vertical Polarization")
+                    Jump2Vertical = i;
             }
 
-            int temp = 0;
-            int column_count = 0;
-            for (int i = Jump_2_PlotRow; i < dt.Tables[0].Rows.Count; i++) //Jump to specified polarization block to read data
+            for (int i = Jump_2_PlotRow; i < dt.Tables[0].Rows.Count; i++) //Jump to specified polarization block to read data                
             {
                 for (int j = 0; j < dt.Tables[0].Columns.Count; j++)
                 {
@@ -85,27 +78,27 @@ namespace Matlab_OnNet
                         if (PolarBlockElements.Contains("Theta") && temp == 0)
                         {
                             temp = 1;
-                            column_count = j - 1; // Get column's length under this block
+                            column_count = j - 1; // Get column's length under this block                            
                         }
+
                         continue;
                     }
                     if (column_count > 0 && j > 1 && dt.Tables[0].Rows[i][j].ToString() != "Phi")
-                        PolarBlockElements.Add(dt.Tables[0].Rows[i][0].ToString());//fill Row's data into this List container
-                    PolarBlockElements.Add(dt.Tables[0].Rows[i][j].ToString());//fill test value into List container
+                        PolarBlockElements.Add(dt.Tables[0].Rows[i][0].ToString());//fill Row's data into this List container                        
+                    PolarBlockElements.Add(dt.Tables[0].Rows[i][j].ToString());//fill test value into List container                    
                 }
-                //remove these string and search end terminal in the block
+
+                //remove these string and search end terminal in the block                
                 if (dt.Tables[0].Rows[i][0].ToString() == "" &&
                     PolarBlockElements.Contains(PlotBlock) &&
-                     PolarBlockElements.Contains("Phi") &&
-                     PolarBlockElements.Contains("Theta"))
+                    PolarBlockElements.Contains("Phi") &&
+                    PolarBlockElements.Contains("Theta"))
                 {
                     PolarBlockElements.Remove(PlotBlock);
                     PolarBlockElements.Remove("Phi");
                     PolarBlockElements.Remove("Theta");
-
                     break;
                 }
-
             }//end for loop
 
             string[] column_array = new string[column_count];
@@ -130,11 +123,6 @@ namespace Matlab_OnNet
                 temp_list.Insert(i, row_array[kg]);
                 temp_list.Insert(i + 1, row_array[kg + 1]);
                 kg = kg + 2;
-            }
-
-            for (int i = 0; i < (row_array.Length + row_array.Length / 2); i++)
-            {
-                //Console.WriteLine(temp_list[i]);
             }
 
             temp_list.RemoveRange((row_array.Length + row_array.Length / 2), (temp_list.Count - (row_array.Length + row_array.Length / 2)));
@@ -170,10 +158,6 @@ namespace Matlab_OnNet
 
                 index = i / 3;
 
-                //Console.WriteLine("phi[" + index + "]= " + DataList_2_CoordinateTransformation[i] +
-                //    " theta[" + index + "]= " + DataList_2_CoordinateTransformation[i + 1] +
-                //    " r[" + index + "]= " + DataList_2_CoordinateTransformation[i + 2]);
-
                 theta = DataList_2_CoordinateTransformation[i] / 180 * Pi;
                 phi = DataList_2_CoordinateTransformation[i + 1] / 180 * Pi;
                 r = DataList_2_CoordinateTransformation[i + 2];
@@ -181,10 +165,6 @@ namespace Matlab_OnNet
                 x[index] = r * System.Math.Cos(phi) * System.Math.Sin(theta);
                 y[index] = r * System.Math.Sin(phi) * System.Math.Sin(theta);
                 z[index] = r * System.Math.Cos(theta);
-
-                //Console.WriteLine("x[" + index + "] =" + x[index] +
-                //                 " y[" + index + "] = " + y[index] +
-                //                 " z[" + index + "] = " + z[index]);
 
                 //Change sequence from one dimensional(@.NET) to two dimensional(@Matlab) 
                 if (index < column_count)
@@ -206,20 +186,22 @@ namespace Matlab_OnNet
 
             }// end for loop
 
+            //kill array elements
             Array.Clear(x, 0, x.Length);
             Array.Clear(y, 0, y.Length);
             Array.Clear(z, 0, z.Length);
+            Array.Clear(DataList_2_CoordinateTransformation, 0, DataList_2_CoordinateTransformation.Length);
 
             if (FrameSplitup == 0) FrameSplitup = Convert.ToInt32(Math.Ceiling(Math.Sqrt(iframe)));
             Console.WriteLine("Frame: " + FrameSplitup + " ifram: " + iframe + "");
 
             matlab.Execute("figure('Menubar', 'none');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', 'Vertical Cable Loss');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + vertical_cable_loss + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', 'Horizontal Cable Loss');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + horizontal_cable_loss + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + test_item + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + test_mode_data_infor + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 3][0].ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 3][1].ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 2][0].ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 2][1].ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 1][0].ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + dt.Tables[0].Rows[dt.Tables[0].Rows.Count - 1][1].ToString() + "dBm');");
             matlab.Execute("h   =mesh(x,y,z); xlabel('X-axis');ylabel('Y-axis');zlabel('Z-axis');");
             matlab.Execute("set(h,'edgecolor', [0.2 0.5 0.5], 'FaceColor',[0.99609375 0.99609375 0.55859375]);");
             matlab.Execute("rotate3d on");

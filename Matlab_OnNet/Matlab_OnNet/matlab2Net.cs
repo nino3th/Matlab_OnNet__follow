@@ -24,6 +24,9 @@
  *                                 to scan data.
  * ----------------------------------------------------------------------------------------------------
  * 20120709  | NinoLiu  | 1.6.0  | Add 2D drawing method and refactory program architecture of 2D & 3D.
+ * ----------------------------------------------------------------------------------------------------
+ * 20120717  | NinoLiu  | 1.7.0  | Add to scan excel bottom's information and then show on the main-UI,
+ *                               | and add the method of killing lists and arrays.
  * ======================================================================================================
  */
 using System;

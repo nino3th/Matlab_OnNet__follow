@@ -102,8 +102,8 @@ namespace Matlab_OnNet
             KillList(RowsDataList);///kill List capacity
 
             reverse_cut = cut + ((OneBlockRows - 1) / 2);
-            if (reverse_cut > (OneBlockRows - 1))
-                reverse_cut = reverse_cut - (OneBlockRows - 1);
+            if (reverse_cut >= (OneBlockRows - 1))
+                reverse_cut = reverse_cut - (OneBlockRows - 1) + 2;
 
             if (PolarOrt == "horizontal")
             {
@@ -187,4 +187,3 @@ namespace Matlab_OnNet
         }
     }
 }
-
