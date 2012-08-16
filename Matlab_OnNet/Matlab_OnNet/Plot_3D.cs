@@ -11,15 +11,14 @@ using MathWorks.MATLAB;
 using MathWorks.MATLAB.NET.Arrays;
 using MathWorks.MATLAB.NET.Utility;
 using MLApp;
-
-
+using DES_SA;
 
 namespace Matlab_OnNet
 {
     class Plot_ThreeDim
     {
         string FILE_PATH = "_";
-        string SheetName = "_";
+        string Input_SheetName = "_";
         string PlotBlock = "_";
         int iframe = 0;
         private const double Pi = 3.1416;
@@ -33,13 +32,15 @@ namespace Matlab_OnNet
         OleDbDataAdapter odp;
         DataSet ds;
 
+        String[] SheetNameList;
+
         public Plot_ThreeDim()
         {
         }
         public Plot_ThreeDim(string file_path, string page, string block, int fram)
         {
             FILE_PATH = file_path;
-            SheetName = page;
+            Input_SheetName = page;
             PlotBlock = block;
             iframe = fram;
             matlab = new MLAppClass();
@@ -53,12 +54,12 @@ namespace Matlab_OnNet
                 con.Open();
                 dtt = new DataTable();
                 dtt = con.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, null);
-                String[] exsh_name = new String[dtt.Rows.Count];
+                SheetNameList = new String[dtt.Rows.Count];
 
                 int i = 0;
                 do
                 {
-                    exsh_name[i] = dtt.Rows[i]["TABLE_NAME"].ToString();
+                    SheetNameList[i] = dtt.Rows[i]["TABLE_NAME"].ToString();
                     i++;
                 } while (i < dtt.Rows.Count);
             }
@@ -96,7 +97,7 @@ namespace Matlab_OnNet
             string command = "_";
 
             OpenExcel(FILE_PATH);
-            SelectPage(SheetName);
+            SelectPage(Input_SheetName);
 
             for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
             {
@@ -234,16 +235,24 @@ namespace Matlab_OnNet
             //Console.WriteLine("Frame: " +FrameSplitup+ " ifram: " +iframe+"");
 
             matlab.Execute("figure('Menubar', 'none');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', '" + getinfor.first_infor.name.ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + getinfor.first_infor.value.ToString() + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', '" + getinfor.second_infor.name.ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + getinfor.second_infor.value.ToString() + "dBm');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + getinfor.third_infor.name.ToString() + "');");
-            matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + getinfor.third_infor.value.ToString() + "dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 75 125 20], 'String', '" + Input_SheetName + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 55 125 20], 'String', '" + getinfor.Test_name + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 35 125 20], 'String', '" + getinfor.Vender.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 15 125 20], 'String', '" + getinfor.Module_name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [470 55 75 20], 'String', '" + PlotBlock + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [400 35 75 20],'String', '" + getinfor.First_Encrypt_Infor.name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [470 35 75 20], 'String', '" + getinfor.First_Encrypt_Infor.value.ToString() + " dBm');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [400 15 75 20],'String', '" + getinfor.Second_Encrypt_Infor.name.ToString() + "');");
+            matlab.Execute("uicontrol('Style', 'edit', 'Position', [470 15 75 20], 'String', '" + getinfor.Second_Encrypt_Infor.value.ToString() + " dB');");
+            //            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 20 75 20],'String', '" + getinfor.Third_Infor.name.ToString() + "');");
+            //            matlab.Execute("uicontrol('Style', 'edit', 'Position', [90 20 75 20], 'String', '" + getinfor.Third_Infor.value.ToString() + " degree');");
+            //            matlab.Execute("uicontrol('Style', 'edit', 'Position', [10 0 75 20],'String', '" + getinfor.Fourth_Infor.name.ToString() + "');");
+            //            matlab.Execute("uicontrol('Style', 'edit', 'Position', [90 0 75 20], 'String', '" + getinfor.Fourth_Infor.value.ToString() + " degree');");
+
             matlab.Execute("h   =mesh(x,y,z); xlabel('X-axis');ylabel('Y-axis');zlabel('Z-axis');");
             matlab.Execute("set(h,'edgecolor', [0.2 0.5 0.5], 'FaceColor',[0.99609375 0.99609375 0.55859375]);");
             matlab.Execute("rotate3d on");
-            matlab.Execute("title('SheetName: " + SheetName + "    Block: " + PlotBlock + "')");
+            //matlab.Execute("title('SheetName: " + Input_SheetName + "    Block: " + PlotBlock + "')");
             matlab.Execute("axis normal;");
 
             /*
@@ -290,29 +299,51 @@ namespace Matlab_OnNet
 
         public struct Stru_GetExcelInfor
         {
-            public Infor_Type first_infor;
-            public Infor_Type second_infor;
-            public Infor_Type third_infor;
+            public Infor_Type First_Encrypt_Infor;
+            public Infor_Type Second_Encrypt_Infor;
+            public Infor_Type Third_Infor;
+            public Infor_Type Fourth_Infor;
+            public string Test_name;
+            public string Vender;
+            public string Module_name;
         };
 
         public void GetInformation(DataSet ds, out Stru_GetExcelInfor stru)
         {
-            stru.first_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 3][0].ToString();
-            stru.first_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 3][1].ToString();
-            stru.second_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 2][0].ToString();
-            stru.second_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 2][1].ToString();
-            stru.third_infor.name = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][0].ToString();
-            stru.third_infor.value = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1][1].ToString();
+            DES_SA.DES_Service_Algorithm des = new DES_SA.DES_Service_Algorithm();
+            int sheet_index = 0;
+            for (int i = 0; i < dtt.Rows.Count - 1; i++)
+            {
+                if (SheetNameList[i] == Input_SheetName)
+                    sheet_index = i;
+            }
+            stru.First_Encrypt_Infor.name = ds.Tables[0].Rows[5 + (sheet_index * 2)][0].ToString();
+            stru.First_Encrypt_Infor.value = des.Decoding_Service(ds.Tables[0].Rows[5 + (sheet_index * 2)][1].ToString());
+            stru.Second_Encrypt_Infor.name = ds.Tables[0].Rows[6 + (sheet_index * 2)][0].ToString();
+            stru.Second_Encrypt_Infor.value = des.Decoding_Service(ds.Tables[0].Rows[6 + (sheet_index * 2)][1].ToString());
+            stru.Fourth_Infor.name = ds.Tables[0].Rows[4][0].ToString();
+            stru.Fourth_Infor.value = ds.Tables[0].Rows[4][1].ToString();
+            stru.Third_Infor.name = ds.Tables[0].Rows[3][0].ToString();
+            stru.Third_Infor.value = ds.Tables[0].Rows[3][1].ToString();
+            stru.Module_name = ds.Tables[0].Rows[2][0].ToString();
+            stru.Vender = ds.Tables[0].Rows[1][0].ToString();
+            stru.Test_name = ds.Tables[0].Rows[0][0].ToString();
         }
         public void ChangeSheet(out Stru_GetExcelInfor ss)//if user must change sheet page to read information about chamber's report
         {
-            SheetName = "Eddie$";//the specified sheet name
-            SelectPage(SheetName);
+            if (SheetNameList[dtt.Rows.Count - 1] == "Global$")
+                SelectPage(SheetNameList[dtt.Rows.Count - 1]);
+            else
+                ErrorLogger("" + DateTime.Now + " 3D Error : Can't find 'Global' Sheet on Excel..." + '\t' + "");
+
             GetInformation(ds, out ss);//get the information of test item from excel            
         }
         public void ErrorLogger(string exceptionmessage)
         {
-            const string Err_Log_Path = ".\\..\\..\\errlog.txt";//place error log in root folder
+            if (!System.IO.Directory.Exists(".\\Log"))
+                System.IO.Directory.CreateDirectory(".\\Log");
+
+            const string Err_Log_Path = ".\\Log\\errlog.txt";//place error log in root folder
 
             using (StreamWriter writer = new StreamWriter(Err_Log_Path, true))
             {
@@ -333,6 +364,5 @@ namespace Matlab_OnNet
             {
             }
         }
-
     }
 }
