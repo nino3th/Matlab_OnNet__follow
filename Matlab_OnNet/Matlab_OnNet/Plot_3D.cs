@@ -20,14 +20,14 @@ namespace Matlab_OnNet
         string FILE_NAME = "_";
         string SheetName = "_";
         string PlotBlock = "_";
-        int frame = 0;
+        int iframe = 0;
         private const double Pi = 3.1416;
         private string exlspec = string.Empty;
         public static int Figure_acc = 1;
         public static int Sub_figure_num = 2;
 
         public static int FrameSplitup = 0;
-        
+
         MLAppClass matlab;
 
         public Plot_ThreeDim(string file, string page, string block, int fram)
@@ -35,20 +35,20 @@ namespace Matlab_OnNet
             FILE_NAME = file;
             SheetName = page;
             PlotBlock = block;
-            frame = fram;
+            iframe = fram;
             matlab = new MLAppClass();
         }
         public void Run()
         {
             List<string> PolarBlockElements = new List<string>();
 
-            int Jump_2_PlotRow = 0;            
+            int Jump_2_PlotRow = 0;
             string command = "_";
             string test_mode_data_infor = "_";
             string test_item = "_";
             string vertical_cable_loss = "_";
             string horizontal_cable_loss = "_";
-            
+
             string exlspec = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + FILE_NAME + ";Extended Properties='Excel 12.0;HDR=NO;IMEX=1;'";
             OleDbConnection con = new OleDbConnection(exlspec);
             con.Open();
@@ -60,7 +60,7 @@ namespace Matlab_OnNet
 
             for (int i = 0; i < dt.Tables[0].Rows.Count; i++)
             {
-                Console.WriteLine(dt.Tables[0].Rows[i][0].ToString().Trim());
+                //Console.WriteLine(dt.Tables[0].Rows[i][0].ToString().Trim());
                 if (dt.Tables[0].Rows[i][0].ToString() == PlotBlock)
                     Jump_2_PlotRow = i; //To get the row position of this string keyin by user.
                 if (dt.Tables[0].Rows[i][0].ToString() == "TRP" || dt.Tables[0].Rows[i][0].ToString() == "TIS")
@@ -131,11 +131,11 @@ namespace Matlab_OnNet
                 temp_list.Insert(i + 1, row_array[kg + 1]);
                 kg = kg + 2;
             }
-            
+
             for (int i = 0; i < (row_array.Length + row_array.Length / 2); i++)
             {
-                Console.WriteLine(temp_list[i]);
-            }            
+                //Console.WriteLine(temp_list[i]);
+            }
 
             temp_list.RemoveRange((row_array.Length + row_array.Length / 2), (temp_list.Count - (row_array.Length + row_array.Length / 2)));
             temp_list.Remove("(Unit: dBm)");
@@ -144,7 +144,7 @@ namespace Matlab_OnNet
             Double[] DataList_2_CoordinateTransformation = new Double[temp_array.Length];
 
             temp_array = temp_list.GetRange(0, temp_list.Count).ToArray();
-            for (int i = 0; i < (temp_list.Count ); i++)
+            for (int i = 0; i < (temp_list.Count); i++)
             {
                 if (temp_array[i] == "")
                     break;
@@ -170,9 +170,9 @@ namespace Matlab_OnNet
 
                 index = i / 3;
 
-                Console.WriteLine("phi[" + index + "]= " + DataList_2_CoordinateTransformation[i] +
-                    " theta[" + index + "]= " + DataList_2_CoordinateTransformation[i + 1] +
-                    " r[" + index + "]= " + DataList_2_CoordinateTransformation[i + 2]);
+                //Console.WriteLine("phi[" + index + "]= " + DataList_2_CoordinateTransformation[i] +
+                //    " theta[" + index + "]= " + DataList_2_CoordinateTransformation[i + 1] +
+                //    " r[" + index + "]= " + DataList_2_CoordinateTransformation[i + 2]);
 
                 theta = DataList_2_CoordinateTransformation[i] / 180 * Pi;
                 phi = DataList_2_CoordinateTransformation[i + 1] / 180 * Pi;
@@ -182,9 +182,9 @@ namespace Matlab_OnNet
                 y[index] = r * System.Math.Sin(phi) * System.Math.Sin(theta);
                 z[index] = r * System.Math.Cos(theta);
 
-                Console.WriteLine("x[" + index + "] =" + x[index] +
-                                 " y[" + index + "] = " + y[index] +
-                                 " z[" + index + "] = " + z[index]);
+                //Console.WriteLine("x[" + index + "] =" + x[index] +
+                //                 " y[" + index + "] = " + y[index] +
+                //                 " z[" + index + "] = " + z[index]);
 
                 //Change sequence from one dimensional(@.NET) to two dimensional(@Matlab) 
                 if (index < column_count)
@@ -205,35 +205,45 @@ namespace Matlab_OnNet
 
 
             }// end for loop
-            
-            if (FrameSplitup==0) FrameSplitup = Convert.ToInt32(Math.Ceiling(Math.Sqrt(frame)));
 
-            matlab.Execute("figure('Menubar', 'none');");         
+            Array.Clear(x, 0, x.Length);
+            Array.Clear(y, 0, y.Length);
+            Array.Clear(z, 0, z.Length);
+
+            if (FrameSplitup == 0) FrameSplitup = Convert.ToInt32(Math.Ceiling(Math.Sqrt(iframe)));
+            Console.WriteLine("Frame: " + FrameSplitup + " ifram: " + iframe + "");
+
+            matlab.Execute("figure('Menubar', 'none');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 70 130 20],'String', 'Vertical Cable Loss');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 70 80 20], 'String', '" + vertical_cable_loss + "dBm');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 45 130 20],'String', 'Horizontal Cable Loss');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 45 80 20], 'String', '" + horizontal_cable_loss + "dBm');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [20 20 130 20],'String', '" + test_item + "');");
             matlab.Execute("uicontrol('Style', 'edit', 'Position', [140 20 125 20], 'String', '" + test_mode_data_infor + "dBm');");
-            matlab.Execute("h=mesh(z,x,y); xlabel('X-axis');ylabel('Y-axis');zlabel('Z-axis');");
+            matlab.Execute("h   =mesh(x,y,z); xlabel('X-axis');ylabel('Y-axis');zlabel('Z-axis');");
             matlab.Execute("set(h,'edgecolor', [0.2 0.5 0.5], 'FaceColor',[0.99609375 0.99609375 0.55859375]);");
             matlab.Execute("rotate3d on");
 
             matlab.Execute("title('SheetName: " + SheetName + "    Block: " + PlotBlock + "')");
             matlab.Execute("axis normal;");
 
-            
-            matlab.Execute("figure("+ Sub_figure_num +")");
+            if (Figure_acc == Sub_figure_num) Figure_acc++;
+
+            matlab.Execute("figure(" + Sub_figure_num + ")");
             matlab.Execute("hold on");
+
             if (Figure_acc > 2) matlab.Execute("subplot(" + FrameSplitup + "," + FrameSplitup + "," + (Figure_acc - 1) + ")");
-            else  matlab.Execute("subplot(3,3," + Figure_acc + ")");
+            else matlab.Execute("subplot(3,3," + Figure_acc + ")");
+
+            //matlab.Execute("subplot("+ FrameSplitup + "," + FrameSplitup + "," + (Figure_acc-1) + ")");
+            //else matlab.Execute("subplot(" + FrameSplitup + "," + FrameSplitup + "," + Figure_acc + ")");
             matlab.Execute("s=mesh(x,y,z);rotate3d on");
             matlab.Execute("set(s,'edgecolor', [0.2 0.5 0.5], 'FaceColor',[0.99609375 0.99609375 0.55859375]);");
-            matlab.Execute("title('figure("+Figure_acc+")')");
+            matlab.Execute("title('figure(" + Figure_acc + ")')");
             matlab.Execute("hold off");
-            
-            Figure_acc++;            
-            if (Figure_acc == Sub_figure_num) Figure_acc++;
+
+            Figure_acc++;
+            // if (Figure_acc == Sub_figure_num) Figure_acc++;
 
         }//end Run
     }

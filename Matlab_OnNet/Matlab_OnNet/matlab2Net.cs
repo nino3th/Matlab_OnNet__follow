@@ -45,35 +45,30 @@ namespace Matlab_OnNet
 {
     public class matlab_plot
     {
-        private const double Pi = 3.1416;
-        private string exlspec = string.Empty;
-        public static int Figure_acc = 1;
-        public static int Sub_figure_num = 2;
-        public static int FrameSplitup = 0;
         MLAppClass matlab;
 
         public matlab_plot()
         {
             matlab = new MLAppClass();
         }
-        
+
         public void matlab_set()
-        {            
+        {
             matlab.Visible = 1;
             matlab.Execute("clear");
         }
-        public void Plot_2D(string FILE_NAME, string SheetName, string PlotBlock, string orientation, int arc)
+        public void Plot_2D(string FILE_NAME, string SheetName, string PlotBlock, string orientation, string CutNumber)
         {
-            Plot_TwoDim plot2d = new Plot_TwoDim(FILE_NAME, SheetName, PlotBlock, orientation, arc);
+            Plot_TwoDim plot2d = new Plot_TwoDim(FILE_NAME, SheetName, PlotBlock, orientation, CutNumber);
             plot2d.Run();
         }
-        
+
         public void Plot_3D(string FILE_NAME, string SheetName, string PlotBlock, int frame)
         {
             Plot_ThreeDim plot3d = new Plot_ThreeDim(FILE_NAME, SheetName, PlotBlock, frame);
             plot3d.Run();
-            
+
         }//end Plot_3D
-        
+
     }//end class
 }
