@@ -95,6 +95,7 @@ namespace Matlab_OnNet
             int Jump2Vertical = 0;
             int temp = 0;
             int column_count = 0;
+            double Minimum_Compensate = 0;
             string command = "_";
 
             OpenExcel(FILE_PATH);
@@ -108,6 +109,8 @@ namespace Matlab_OnNet
                     Jump2Horizontal = i;
                 if (ds.Tables[0].Rows[i][0].ToString() == "Vertical Polarization")
                     Jump2Vertical = i;
+                if (ds.Tables[0].Rows[i][0].ToString() == "Minimum Power" && Convert.ToDouble(ds.Tables[0].Rows[i][1].ToString()) < 0)
+                    Minimum_Compensate = Convert.ToDouble(ds.Tables[0].Rows[i][1].ToString());//determine if Minimum_Compare is greater than 0, then shift r value
             }
 
             for (int i = Jump_2_PlotRow; i < ds.Tables[0].Rows.Count; i++) //Jump to specified polarization block to read data                
@@ -200,7 +203,7 @@ namespace Matlab_OnNet
 
                 theta = DataList_2_CoordinateTransformation[i] / 180 * Pi;
                 phi = DataList_2_CoordinateTransformation[i + 1] / 180 * Pi;
-                r = DataList_2_CoordinateTransformation[i + 2];
+                r = DataList_2_CoordinateTransformation[i + 2] - Minimum_Compensate;//shift r value, if (Minimum_Compensate < 0)
 
                 x[index] = r * System.Math.Cos(phi) * System.Math.Sin(theta);
                 y[index] = r * System.Math.Sin(phi) * System.Math.Sin(theta);
@@ -381,6 +384,7 @@ namespace Matlab_OnNet
 
                         } 
             */
+            //Because 7 will greater than 13 in c# of digital sort for excel, sort sheet page from the length of sheet name
             for (int j = sheet_length - 3; j < sheet_length - 1; j++)
             {
                 for (int i = 1; i <= sheet_length - 1; i++)
